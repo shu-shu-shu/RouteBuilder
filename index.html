@@ -22,19 +22,18 @@
 
         #instructions {
             position: absolute;
-            margin: 20px;
+            margin: 0px;
             width: 25%;
-            top: 0;
-            bottom: 20%;
-            padding: 20px;
+            top: 0%;
+            bottom: 90%;
+            padding: 0px;
             background-color: rgba(255, 255, 255, 0.9);
-            overflow-y: scroll;
             font-family: sans-serif;
             font-size: 0.8em;
             line-height: 2em;
         }
 
-        .duration {
+        .distance {
             font-size: 2em;
         }
     </style>
@@ -47,7 +46,7 @@
         mapboxgl.accessToken = 'pk.eyJ1Ijoic2h1NzExIiwiYSI6ImNrY3d2aDEyajAwNm0yc28wamFpanphejIifQ.HNygBT192Xfu5W4lhGXjRw';
         var map = new mapboxgl.Map({
             container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v10',
+            style: 'mapbox://styles/mapbox/outdoors-v11',
             center: [139.220500, 35.427528], // starting position
             zoom: 12
         });
@@ -74,6 +73,7 @@
             req.onload = function () {
                 var json = JSON.parse(req.response);
                 var data = json.routes[0];
+                console.log(json);
                 var route = data.geometry.coordinates;
                 var geojson = {
                     type: 'Feature',
@@ -89,8 +89,8 @@
 
                 var tripInstructions = [];
                 for (var i = 0; i < steps.length; i++) {
-                    tripInstructions.push('<br><li>' + steps[i].maneuver.instruction) + '</li>';
-                    instructions.innerHTML = '<br><span class="duration">Trip duration: ' + Math.floor((data.duration / 60) * 3) + ' min 🚴 </span>' + tripInstructions;
+                    // tripInstructions.push('<br><li>' + steps[i].maneuver.instruction) + '</li>';
+                    instructions.innerHTML = '<br><span class="distance">Trip distance: ' + Math.floor(data.distance/1000) + ' km 🚴 </span>' + tripInstructions;
                 }
 
                 // if the route already exists on the map, reset it using setData
