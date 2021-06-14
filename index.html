@@ -6,6 +6,8 @@
     <title></title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js'></script>
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css' rel='stylesheet' />
     <style>
         body {
@@ -51,6 +53,14 @@
             zoom: 12
         });
 
+        // Create variables to use in getIso()
+        var urlBase = 'https://api.mapbox.com/isochrone/v1/mapbox/';
+        var lon = 139.220500;
+        var lat = 35.427528;
+        var profile = 'driving';
+        var minutes = 60;
+
+        var click_times = 0;
         // initialize the map canvas to interact with later
         var canvas = map.getCanvasContainer();
 
@@ -90,7 +100,7 @@
                 var tripInstructions = [];
                 for (var i = 0; i < steps.length; i++) {
                     // tripInstructions.push('<br><li>' + steps[i].maneuver.instruction) + '</li>';
-                    instructions.innerHTML = '<br><span class="distance">Trip distance: ' + Math.floor(data.distance/1000) + ' km 🚴 </span>' + tripInstructions;
+                    instructions.innerHTML = '<br><span class="distance">Trip distance: ' + Math.floor(data.distance / 1000) + ' km 🚴 </span>' + tripInstructions;
                 }
 
                 // if the route already exists on the map, reset it using setData
@@ -126,7 +136,29 @@
             };
             req.send();
         }
+        // Create a function that sets up the Isochrone API query then makes an Ajax call
+        function getIso(in_minutes, isoid) {
+            var query =
+                urlBase +
+                profile +
+                '/' +
+                lon +
+                ',' +
+                lat +
+                '?contours_minutes=' +
+                in_minutes +
+                '&polygons=true&access_token=' +
+                mapboxgl.accessToken;
 
+            $.ajax({
+                method: 'GET',
+                url: query
+            }).done(function (data) {
+                // Set the 'iso' source's data to what's returned by the API query
+                map.getSource(isoid).setData(data);
+            });
+            
+        }
         map.on('load', function () {
             // make an initial directions request that
             // starts and ends at the same location
@@ -155,7 +187,83 @@
                     'circle-radius': 10,
                     'circle-color': '#3887be'
                 }
+
             });
+            // When the map loads, add the source and layer
+
+            map.addSource('iso60', {
+                type: 'geojson',
+                data: {
+                    'type': 'FeatureCollection',
+                    'features': []
+                }
+            });
+
+            map.addLayer(
+                {
+                    'id': 'isoLayer60',
+                    'type': 'fill',
+                    'source': 'iso60',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': '#7a3fc0',
+                        'fill-opacity': 0.3
+                    }
+                },
+                'poi-label'
+            );
+
+            map.addSource('iso40', {
+                type: 'geojson',
+                data: {
+                    'type': 'FeatureCollection',
+                    'features': []
+                }
+            });
+
+            map.addLayer(
+                {
+                    'id': 'isoLayer40',
+                    'type': 'fill',
+                    'source': 'iso40',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': '#6a3fc0',
+                        'fill-opacity': 0.3
+                    }
+                },
+                'poi-label'
+            ); 
+
+            map.addSource('iso20', {
+                type: 'geojson',
+                data: {
+                    'type': 'FeatureCollection',
+                    'features': []
+                }
+            });
+
+            map.addLayer(
+                {
+                    'id': 'isoLayer20',
+                    'type': 'fill',
+                    'source': 'iso20',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': '#123fc0',
+                        'fill-opacity': 0.3
+                    }
+                },
+                'poi-label'
+            );
+
+            // Initialize the marker at the query coordinates
+            // marker.setLngLat(lngLat).addTo(map);
+
+            // Make the API call
+            getIso(20, "iso20");
+            getIso(40, "iso40");
+            getIso(60, "iso60");
             // this is where the code from the next step will go
         });
 
@@ -204,6 +312,9 @@
                 });
             }
             getRoute(coords);
+            getIso(20, "iso20");
+            getIso(40, "iso40");
+            getIso(60, "iso60");
         });
     </script>
 </body>
