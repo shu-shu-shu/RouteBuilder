@@ -164,14 +164,14 @@
             req.send();
         }
         // Create a function that sets up the Isochrone API query then makes an Ajax call
-        function getIso(in_minutes, isoid) {
+        function getIso(in_minutes, isoid, in_coordinates) {
             var query =
                 urlBase +
                 profile +
                 '/' +
-                end.features[0].geometry.coordinates[0] +
+                in_coordinates[0] +
                 ',' +
-                end.features[0].geometry.coordinates[1] +
+                in_coordinates[1] +
                 '?contours_minutes=' +
                 in_minutes +
                 '&polygons=true&access_token=' +
@@ -293,9 +293,6 @@
             // marker.setLngLat(lngLat).addTo(map);
 
             // Make the API call
-            getIso(20, "iso20");
-            getIso(40, "iso40");
-            getIso(60, "iso60");
             // this is where the code from the next step will go
 
             console.log("debug4");
@@ -386,13 +383,17 @@
             }
 
             click_times++;
-
+            if (click_times == 1){
+                getIso(20, "iso20", start.features[0].geometry.coordinates);
+                getIso(40, "iso40", start.features[0].geometry.coordinates);
+                getIso(60, "iso60", start.features[0].geometry.coordinates);                
+            }
             if (click_times >= 2) {
                 getRoute(start.features[0].geometry.coordinates, end.features[0].geometry.coordinates);
                 getRoute(start.features[0].geometry.coordinates, end.features[0].geometry.coordinates); //なぜか二回叩かないと1回目の描画がされない
-                getIso(20, "iso20");
-                getIso(40, "iso40");
-                getIso(60, "iso60");
+                getIso(20, "iso20", end.features[0].geometry.coordinates);
+                getIso(40, "iso40", end.features[0].geometry.coordinates);
+                getIso(60, "iso60", end.features[0].geometry.coordinates);
             }
             console.log("debug2");
 
