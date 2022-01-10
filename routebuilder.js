@@ -7,6 +7,8 @@ var map = new mapboxgl.Map({
     zoom: 12
 });
 
+
+//標高チャート作成
 var data = {
     // A labels array that can contain any sort of values
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
@@ -29,33 +31,8 @@ var minutes = 60;
 var click_times = 0;
 // initialize the map canvas to interact with later
 var canvas = map.getCanvasContainer();
+let points = [];
 
-// an arbitrary start will always be the same
-// only the end or destination will change
-var start = {
-    type: 'FeatureCollection',
-    features: [{
-        type: 'Feature',
-        properties: {},
-        geometry: {
-            type: 'Point',
-            coordinates: [139.220500, 35.427528]
-        }
-    }
-    ]
-};
-var end = {
-    type: 'FeatureCollection',
-    features: [{
-        type: 'Feature',
-        properties: {},
-        geometry: {
-            type: 'Point',
-            coordinates: [139.220500, 35.427528]
-        }
-    }
-    ]
-};
 
 
 // this is where the code for the next step will go
@@ -157,7 +134,7 @@ function getIso(in_minutes, isoid, in_coordinates) {
     });
 }
 
-function getElevation(lon, lat) {
+function getElevation(lon, lat, point_size) {
     var ajax = new XMLHttpRequest();
     var url_ele = 'https://cyberjapandata2.gsi.go.jp/general/dem/scripts/getelevation.php?lon=' +
         lon +
@@ -167,7 +144,9 @@ function getElevation(lon, lat) {
     ajax.open("get", url_ele);
     ajax.send(); // 通信させます。
     ajax.addEventListener("load", function () { // loadイベントを登録します。
-        console.log(this.response); // 通信結果を出力します。
+        let ele = JSON.parse(this.response);
+        console.log(ele.elevation); // 通信結果を出力します。
+        points[point_size - 1].elevation = ele.elevation;
     }, false);
 }
 
@@ -190,7 +169,7 @@ map.on('load', function () {
                         properties: {},
                         geometry: {
                             type: 'Point',
-                            coordinates: start.features[0].geometry.coordinates
+                            coordinates: points[0].features[0].geometry.coordinates
                         }
                     }
                     ]
@@ -203,7 +182,7 @@ map.on('load', function () {
 
         });
     } else if (click_times >= 2) {
-        getRoute(start.features[0].geometry.coordinates, end.features[0].geometry.coordinates);
+        getRoute(points[0].features[0].geometry.coordinates, points[1].features[0].geometry.coordinates);
     }
 
     // When the map loads, add the source and layer
@@ -299,17 +278,26 @@ map.on('click', function (e) {
     // console.log(start.features[0].geometry.coordinates);
     // console.log(start.features[0].geometry.type);
 
-    if (click_times == 0) {
-        start.features[0].geometry.coordinates = coords;
-    } else if (click_times == 1) {
-        end.features[0].geometry.coordinates = coords;
-    } else {
-        start.features[0].geometry.coordinates = end.features[0].geometry.coordinates;
-        end.features[0].geometry.coordinates = coords;
-    }
+
+    let point = {
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'Point',
+                coordinates: coords,
+            }
+        }
+        ],
+        elevation: 0,
+    };
+
+    points.push(point);
+    getElevation(coords[0], coords[1], points.length);
 
     if (map.getLayer('start')) {
-        map.getSource('start').setData(start);
+        map.getSource('start').setData(point);
     } else {
         map.addLayer({
             id: 'start',
@@ -323,7 +311,7 @@ map.on('click', function (e) {
                         properties: {},
                         geometry: {
                             type: 'Point',
-                            coordinates: start.features[0].geometry.coordinates
+                            coordinates: point.features[0].geometry.coordinates
                         }
                     }]
                 }
@@ -338,8 +326,7 @@ map.on('click', function (e) {
     if (click_times >= 1) {
         if (map.getLayer('end')) {
             console.log("debug end1");
-
-            map.getSource('end').setData(end);
+            map.getSource('end').setData(points[1]);
         } else {
             console.log("debug end2");
             map.addLayer({
@@ -354,7 +341,7 @@ map.on('click', function (e) {
                             properties: {},
                             geometry: {
                                 type: 'Point',
-                                coordinates: end.features[0].geometry.coordinates
+                                coordinates: points[1].features[0].geometry.coordinates
                             }
                         }]
                     }
@@ -367,19 +354,19 @@ map.on('click', function (e) {
         }
     }
 
+
     click_times++;
     if (click_times == 1) {
-        getIso(20, "iso20", start.features[0].geometry.coordinates);
-        getIso(40, "iso40", start.features[0].geometry.coordinates);
-        getIso(60, "iso60", start.features[0].geometry.coordinates);
+        getIso(20, "iso20", point.features[0].geometry.coordinates);
+        getIso(40, "iso40", point.features[0].geometry.coordinates);
+        getIso(60, "iso60", point.features[0].geometry.coordinates);
     }
     if (click_times >= 2) {
-        getRoute(start.features[0].geometry.coordinates, end.features[0].geometry.coordinates);
-        getRoute(start.features[0].geometry.coordinates, end.features[0].geometry.coordinates); //なぜか二回叩かないと1回目の描画がされない
-        getIso(20, "iso20", end.features[0].geometry.coordinates);
-        getIso(40, "iso40", end.features[0].geometry.coordinates);
-        getIso(60, "iso60", end.features[0].geometry.coordinates);
+        getRoute(points[0].features[0].geometry.coordinates, points[1].features[0].geometry.coordinates);
+        getRoute(points[0].features[0].geometry.coordinates, points[1].features[0].geometry.coordinates); //なぜか二回叩かないと1回目の描画がされない
+        getIso(20, "iso20", points[1].features[0].geometry.coordinates);
+        getIso(40, "iso40", points[1].features[0].geometry.coordinates);
+        getIso(60, "iso60", points[1].features[0].geometry.coordinates);
     }
     console.log("debug2");
-    getElevation(end.features[0].geometry.coordinates[0], end.features[0].geometry.coordinates[1]);
 });
