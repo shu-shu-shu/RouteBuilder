@@ -41,10 +41,8 @@ function getRoute(start_co, end_co) {
     // make a directions request using driving profile
     // an arbitrary start will always be the same
     // only the end or destination will change
-    console.log("debug a");
 
-    console.log(start_co);
-    console.log(end_co);
+    // console.log("get route start position:", start_co, ", end position:", end_co);s
 
     var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + start_co[0] + ',' + start_co[1] + ';' + end_co[0] + ',' + end_co[1] + '?steps=true&geometries=geojson&exclude=motorway&language=ja&access_token=' + mapboxgl.accessToken;
 
@@ -64,8 +62,8 @@ function getRoute(start_co, end_co) {
                 coordinates: route
             }
         };
-        var points = turf.explode(geojson); // where line is a GeoJSON LineString
-        console.log(points);
+        // var points = turf.explode(geojson); // where line is a GeoJSON LineString
+        // console.log(points);
         // get the sidebar and add the instructions
         var instructions = document.getElementById('instructions');
         var steps = data.legs[0].steps;
@@ -75,8 +73,8 @@ function getRoute(start_co, end_co) {
             // tripInstructions.push('<br><li>' + steps[i].maneuver.instruction) + '</li>';
             instructions.innerHTML = '<br><span class="distance">Trip distance: ' + Math.floor(data.distance / 1000) + ' km 🚴 </span>' + tripInstructions;
         }
-        console.log(route);
-        console.log(geojson);
+        // console.log(route);
+        // console.log(geojson);
         // if the route already exists on the map, reset it using setData
         if (map.getSource('route')) {
             map.getSource('route').setData(geojson);
@@ -107,6 +105,7 @@ function getRoute(start_co, end_co) {
                 }
             });
         }
+        
         // add turn instructions here at the end
     };
     req.send();
@@ -145,16 +144,19 @@ function getElevation(lon, lat, point_size) {
     ajax.send(); // 通信させます。
     ajax.addEventListener("load", function () { // loadイベントを登録します。
         let ele = JSON.parse(this.response);
-        console.log(ele.elevation); // 通信結果を出力します。
+        console.log("elevation:", ele.elevation); // 通信結果を出力します。
         points[point_size - 1].elevation = ele.elevation;
     }, false);
 }
 
 map.on('load', function () {
-    console.log("debug3");
+    console.log("load event!");
 
     // make an initial directions request that
     // starts and ends at the same location
+    getRoute(start = [139.220500, 35.427528], end = [139.220500, 35.427528]);
+
+    
     if (click_times == 1) {
         // Add starting point to the map
         map.addLayer({
@@ -252,15 +254,6 @@ map.on('load', function () {
         },
         'poi-label'
     );
-
-    // Initialize the marker at the query coordinates
-    // marker.setLngLat(lngLat).addTo(map);
-
-    // Make the API call
-    // this is where the code from the next step will go
-
-    console.log("debug4");
-
 });
 
 map.on('click', function (e) {
@@ -269,15 +262,7 @@ map.on('click', function (e) {
     var coords = Object.keys(coordsObj).map(function (key) {
         return coordsObj[key];
     });
-    console.log("debug");
-    console.log(click_times);
-    // console.log(start);
-    // console.log(end);
-    // console.log(coords);
-    // console.log(start.features);
-    // console.log(start.features[0].geometry.coordinates);
-    // console.log(start.features[0].geometry.type);
-
+    console.log("clicked!!", click_times, " times");
 
     let point = {
         type: 'FeatureCollection',
@@ -363,10 +348,8 @@ map.on('click', function (e) {
     }
     if (click_times >= 2) {
         getRoute(points[0].features[0].geometry.coordinates, points[1].features[0].geometry.coordinates);
-        getRoute(points[0].features[0].geometry.coordinates, points[1].features[0].geometry.coordinates); //なぜか二回叩かないと1回目の描画がされない
         getIso(20, "iso20", points[1].features[0].geometry.coordinates);
         getIso(40, "iso40", points[1].features[0].geometry.coordinates);
         getIso(60, "iso60", points[1].features[0].geometry.coordinates);
     }
-    console.log("debug2");
 });
