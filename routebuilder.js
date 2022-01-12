@@ -11,10 +11,10 @@ var map = new mapboxgl.Map({
 //標高チャート作成
 var data = {
     // A labels array that can contain any sort of values
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    // labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     // Our series array that contains series objects or in this case series data arrays
     series: [
-        [5, 2, 4, 2, 0]
+        []
     ]
 };
 
@@ -78,11 +78,14 @@ function getRoute(in_way_points) {
             // tripInstructions.push('<br><li>' + steps[i].maneuver.instruction) + '</li>';
             instructions.innerHTML = '<br><span class="distance">Trip distance: ' + Math.floor(data.distance / 1000) + ' km 🚴 </span>' + tripInstructions;
         }
-        // console.log(route);
+        console.log(route);
         // console.log(geojson);
         // if the route already exists on the map, reset it using setData
         if (map.getSource('route')) {
             map.getSource('route').setData(geojson);
+            for(let i = 0; i < route.length; i++){
+                getElevation(route[i][0], route[i][1]);
+            }
         } else { // otherwise, make a new request
             console.log("debug route");
             map.addLayer({
@@ -110,8 +113,7 @@ function getRoute(in_way_points) {
                 }
             });
         }
-        
-        // add turn instructions here at the end
+
     };
     req.send();
 }
@@ -138,7 +140,7 @@ function getIso(in_minutes, isoid, in_coordinates) {
     });
 }
 
-function getElevation(lon, lat, point_size) {
+function getElevation(lon, lat) {
     var ajax = new XMLHttpRequest();
     var url_ele = 'https://cyberjapandata2.gsi.go.jp/general/dem/scripts/getelevation.php?lon=' +
         lon +
@@ -150,7 +152,9 @@ function getElevation(lon, lat, point_size) {
     ajax.addEventListener("load", function () { // loadイベントを登録します。
         let ele = JSON.parse(this.response);
         console.log("elevation:", ele.elevation); // 通信結果を出力します。
-        way_points[point_size - 1].elevation = ele.elevation;
+        //標高チャート作成
+        data.series[0].push(Number(ele.elevation));
+        new Chartist.Line('.ct-chart', data);
     }, false);
 }
 
@@ -285,11 +289,9 @@ map.on('click', function (e) {
 
     let way_point = {
         coordinates : coords,
-        elevation : 0
     }
 
     way_points.push(way_point);
-    getElevation(coords[0], coords[1], way_points.length);
 
     if (map.getLayer('start')) {
         map.getSource('start').setData(point);
