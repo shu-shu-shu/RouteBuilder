@@ -17,11 +17,14 @@ var data = {
         []
     ]
 };
+var options = {
+    showPoint: false,
+};
 
 // Create a new line chart object where as first parameter we pass in a selector
 // that is resolving to our chart container element. The Second parameter
 // is the actual data object.
-new Chartist.Line('.ct-chart', data);
+new Chartist.Line('.ct-chart', data, options);
 
 // Create variables to use in getIso()
 var urlBase = 'https://api.mapbox.com/isochrone/v1/mapbox/';
@@ -154,7 +157,7 @@ function getElevation(lon, lat) {
         console.log("elevation:", ele.elevation); // 通信結果を出力します。
         //標高チャート作成
         data.series[0].push(Number(ele.elevation));
-        new Chartist.Line('.ct-chart', data);
+        new Chartist.Line('.ct-chart', data, options);
     }, false);
 }
 
