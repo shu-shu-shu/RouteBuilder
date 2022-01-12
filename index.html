@@ -25,16 +25,32 @@
             width: 100%;
         }
 
+        #legend {
+            position: absolute;
+            margin: 10px;
+            width: 25%;
+            max-width: 600px;
+            top: 0%;
+            bottom: 80%;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.7);
+            font-family: sans-serif;
+            font-size: 0.9em;
+            /* text-align: center; */
+            line-height: 1em;
+        }
+
         #instructions {
             position: absolute;
             margin: 0px;
-            width: 25%;
-            top: 0%;
-            bottom: 90%;
+            width: 100%;
+            max-width: 600px;
+            top: 85%;
+            bottom: 10%;
             padding: 0px;
             background-color: rgba(255, 255, 255, 0.9);
             font-family: sans-serif;
-            font-size: 0.8em;
+            font-size: 0.5em;
             line-height: 2em;
         }
 
@@ -42,22 +58,66 @@
             font-size: 2em;
         }
 
-        .ct-chart{
-            margin:30px auto;
-            position: absolute;/*←絶対位置*/
-            bottom: 0; /*下に固定*/
+        .ct-chart {
+            margin: 30px auto;
+            position: absolute;
+            /*←絶対位置*/
+            top: 90%;
+            /*下に固定*/
+            bottom: 0%;
+            /*下に固定*/
             left: 0;
             right: 0;
+            background-color: rgba(255, 255, 255, 0.9);
             margin: auto;
-            width:100%;
-            max-width:600px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /*リスト本体の設定*/
+        li {
+            list-style-type: none;
+        }
+
+        /*リストの各要素に前要素として■を付ける*/
+        li:before {
+            content: "";
+            display: inline-block;
+            height: 15px;
+            width: 15px;
+            margin-right: 5px;
+        }
+
+        /*リストの各要素の前要素のデザインを設定*/
+        li.series1:before {
+            background: #1240c0b2;
+            border-radius: 2;
+        }
+
+        li.series2:before {
+            background: #6a3fc0cb;
+            border-radius: 2;
+        }
+
+        li.series3:before {
+            background: #793fc06e;
+            border-radius: 2;
         }
     </style>
 </head>
 
 <body>
     <div id='map'></div>
-    <div id="instructions"></div>
+    <div id="legend">
+        <b>minutes to go</b>
+        <br><br>
+        <li class="series1">20min.</li>
+        <br>
+        <li class="series2">40min.</li>
+        <br>
+        <li class="series3">60min.</li>
+    </div>
+    <div id="instructions"> </div>
     <div class="ct-chart ct-double-octave"></div>
     <script src="routebuilder.js"></script>
 </body>

@@ -25,26 +25,32 @@ new Chartist.Line('.ct-chart', data);
 
 // Create variables to use in getIso()
 var urlBase = 'https://api.mapbox.com/isochrone/v1/mapbox/';
-var profile = 'driving';
+// var profile = 'driving';
+var profile = 'cycling';
 var minutes = 60;
 
 var click_times = 0;
 // initialize the map canvas to interact with later
 var canvas = map.getCanvasContainer();
-let points = [];
-
-
+let way_points = [];
 
 // this is where the code for the next step will go
 // create a function to make a directions request
-function getRoute(start_co, end_co) {
+function getRoute(in_way_points) {
     // make a directions request using driving profile
     // an arbitrary start will always be the same
     // only the end or destination will change
 
     // console.log("get route start position:", start_co, ", end position:", end_co);s
-
-    var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + start_co[0] + ',' + start_co[1] + ';' + end_co[0] + ',' + end_co[1] + '?steps=true&geometries=geojson&exclude=motorway&language=ja&access_token=' + mapboxgl.accessToken;
+    let str_coordinates = '';
+    for (let i = 0; i < in_way_points.length; i++){
+        str_coordinates += in_way_points[i].coordinates[0] + ',' + in_way_points[i].coordinates[1];
+        if(i != in_way_points.length - 1){
+            str_coordinates += ';';
+        }
+    }
+    console.log("str_coordinates:", str_coordinates);
+    var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + str_coordinates + '?steps=true&geometries=geojson&exclude=motorway&language=ja&access_token=' + mapboxgl.accessToken;
 
     // make an XHR request https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
     var req = new XMLHttpRequest();
@@ -62,8 +68,7 @@ function getRoute(start_co, end_co) {
                 coordinates: route
             }
         };
-        // var points = turf.explode(geojson); // where line is a GeoJSON LineString
-        // console.log(points);
+
         // get the sidebar and add the instructions
         var instructions = document.getElementById('instructions');
         var steps = data.legs[0].steps;
@@ -145,7 +150,7 @@ function getElevation(lon, lat, point_size) {
     ajax.addEventListener("load", function () { // loadイベントを登録します。
         let ele = JSON.parse(this.response);
         console.log("elevation:", ele.elevation); // 通信結果を出力します。
-        points[point_size - 1].elevation = ele.elevation;
+        way_points[point_size - 1].elevation = ele.elevation;
     }, false);
 }
 
@@ -154,7 +159,7 @@ map.on('load', function () {
 
     // make an initial directions request that
     // starts and ends at the same location
-    getRoute(start = [139.220500, 35.427528], end = [139.220500, 35.427528]);
+    getRoute([start = { coordinates : [139.220500, 35.427528]}, end = { coordinates :[139.220500, 35.427528]}]);
 
     
     if (click_times == 1) {
@@ -171,7 +176,7 @@ map.on('load', function () {
                         properties: {},
                         geometry: {
                             type: 'Point',
-                            coordinates: points[0].features[0].geometry.coordinates
+                            coordinates: way_points[0].coordinates
                         }
                     }
                     ]
@@ -184,7 +189,7 @@ map.on('load', function () {
 
         });
     } else if (click_times >= 2) {
-        getRoute(points[0].features[0].geometry.coordinates, points[1].features[0].geometry.coordinates);
+        getRoute(way_points[0].coordinates, way_points[1].coordinates);
     }
 
     // When the map loads, add the source and layer
@@ -278,8 +283,13 @@ map.on('click', function (e) {
         elevation: 0,
     };
 
-    points.push(point);
-    getElevation(coords[0], coords[1], points.length);
+    let way_point = {
+        coordinates : coords,
+        elevation : 0
+    }
+
+    way_points.push(way_point);
+    getElevation(coords[0], coords[1], way_points.length);
 
     if (map.getLayer('start')) {
         map.getSource('start').setData(point);
@@ -296,7 +306,7 @@ map.on('click', function (e) {
                         properties: {},
                         geometry: {
                             type: 'Point',
-                            coordinates: point.features[0].geometry.coordinates
+                            coordinates: way_point.coordinates
                         }
                     }]
                 }
@@ -311,7 +321,7 @@ map.on('click', function (e) {
     if (click_times >= 1) {
         if (map.getLayer('end')) {
             console.log("debug end1");
-            map.getSource('end').setData(points[1]);
+            map.getSource('end').setData(way_points[1]);
         } else {
             console.log("debug end2");
             map.addLayer({
@@ -326,7 +336,7 @@ map.on('click', function (e) {
                             properties: {},
                             geometry: {
                                 type: 'Point',
-                                coordinates: points[1].features[0].geometry.coordinates
+                                coordinates: way_points[1].coordinates
                             }
                         }]
                     }
@@ -342,14 +352,14 @@ map.on('click', function (e) {
 
     click_times++;
     if (click_times == 1) {
-        getIso(20, "iso20", point.features[0].geometry.coordinates);
-        getIso(40, "iso40", point.features[0].geometry.coordinates);
-        getIso(60, "iso60", point.features[0].geometry.coordinates);
+        getIso(20, "iso20", way_point.coordinates);
+        getIso(40, "iso40", way_point.coordinates);
+        getIso(60, "iso60", way_point.coordinates);
     }
     if (click_times >= 2) {
-        getRoute(points[0].features[0].geometry.coordinates, points[1].features[0].geometry.coordinates);
-        getIso(20, "iso20", points[1].features[0].geometry.coordinates);
-        getIso(40, "iso40", points[1].features[0].geometry.coordinates);
-        getIso(60, "iso60", points[1].features[0].geometry.coordinates);
+        getRoute(way_points);
+        getIso(20, "iso20", way_points[click_times-1].coordinates);
+        getIso(40, "iso40", way_points[click_times-1].coordinates);
+        getIso(60, "iso60", way_points[click_times-1].coordinates);
     }
 });
